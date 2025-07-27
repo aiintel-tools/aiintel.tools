@@ -1,42 +1,32 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React from 'react';
+import { Link } from 'react-router-dom';
+import aiIntelLogo from '../assets/ai-intel-logo.png';
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const navigate = useNavigate()
-
   return (
-    <header className="header">
+    <header>
       <div className="container">
-        <div className="logo">
-          <Link to="/">AI Directory</Link>
-        </div>
-        
-        <nav className={`nav ${isMenuOpen ? 'active' : ''}`}>
-          <ul className="nav-list">
+        <nav>
+          <Link to="/" className="logo">
+            <img src={aiIntelLogo} alt="A.I Intel Logo" />
+            <span>A.I Intel</span>
+          </Link>
+          
+          <ul className="nav-links">
             <li><Link to="/">Home</Link></li>
             <li><Link to="/tools">Browse Tools</Link></li>
             <li><Link to="/pricing">Pricing</Link></li>
           </ul>
+          
+          <div className="auth-buttons">
+            <Link to="/auth" className="btn btn-outline">Sign In</Link>
+            <Link to="/auth?tab=register" className="btn btn-primary">Get Started</Link>
+          </div>
         </nav>
-        
-        <div className="auth-buttons">
-          <button onClick={() => navigate('/auth')}>Sign In</button>
-          <button onClick={() => navigate('/auth?mode=register')} className="btn-primary">
-            Get Started
-          </button>
-        </div>
-        
-        <button 
-          className="menu-toggle"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          Menu
-        </button>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;
 
