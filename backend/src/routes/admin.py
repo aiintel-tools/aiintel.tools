@@ -1,134 +1,75 @@
 """
 Admin routes for the AI Directory Platform.
 """
-
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func
 from datetime import datetime, timedelta
-from ..models import (
-    User, AITool, Category, Industry, Review, 
-    UserFavorite, UserActivityLog, PaymentTransaction, Subscription
-)
-from ..database import db
-from ..utils import format_response, format_error, admin_required
+from src.models.user import User
+from src.models.ai_tool import AITool
+from src.models.category import Category
+from src.models.industry import Industry
+from src.models.review import Review
+from src.models.user_favorite import UserFavorite
+from src.models.user_activity_log import UserActivityLog
+from src.models.payment_transaction import PaymentTransaction
+from src.models.subscription import Subscription
+from src.database import db
+from src.utils import format_response, format_error, admin_required
 
-admin_bp = Blueprint('admin', __name__, url_prefix='/api/v1/admin')
+admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
 @admin_required
-def get_dashboard():
-    """Get admin dashboard statistics."""
-    # Get user statistics
-    total_users = User.query.count()
-    new_users_today = User.query.filter(
-        User.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    ).count()
-    new_users_week = User.query.filter(
-        User.created_at >= datetime.utcnow() - timedelta(days=7)
-    ).count()
-    new_users_month = User.query.filter(
-        User.created_at >= datetime.utcnow() - timedelta(days=30)
-    ).count()
+def get_dashboard_stats():
+    """Get dashboard statistics."""
+    # Get counts
+    user_count = User.query.count()
+    tool_count = AITool.query.count()
+    review_count = Review.query.count()
     
-    # Get subscription statistics
-    free_users = User.query.filter_by(subscription_tier='Free').count()
-    premium_users = User.query.filter_by(subscription_tier='Premium').count()
-    business_users = User.query.filter_by(subscription_tier='Business').count()
-    
-    # Get tool statistics
-    total_tools = AITool.query.count()
-    public_tools = AITool.query.filter_by(access_level='Public').count()
-    premium_tools = AITool.query.filter_by(access_level='Premium Only').count()
-    business_tools = AITool.query.filter_by(access_level='Business Only').count()
-    
-    # Get review statistics
-    total_reviews = Review.query.count()
-    verified_reviews = Review.query.filter_by(is_verified=True).count()
-    
-    # Get revenue statistics
-    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    last_month_start = (month_start - timedelta(days=1)).replace(day=1)
-    
-    monthly_revenue = db.session.query(func.sum(PaymentTransaction.amount)).filter(
-        PaymentTransaction.transaction_date >= month_start,
+    # Get revenue
+    revenue = db.session.query(func.sum(PaymentTransaction.amount)).filter(
         PaymentTransaction.status == 'completed'
     ).scalar() or 0
     
-    last_month_revenue = db.session.query(func.sum(PaymentTransaction.amount)).filter(
-        PaymentTransaction.transaction_date >= last_month_start,
-        PaymentTransaction.transaction_date < month_start,
-        PaymentTransaction.status == 'completed'
-    ).scalar() or 0
+    # Get recent users
+    recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
+    recent_users_data = [
+        {
+            'id': user.id,
+            'email': user.email,
+            'name': f"{user.first_name} {user.last_name}",
+            'subscription_tier': user.subscription_tier,
+            'created_at': user.created_at.isoformat() if user.created_at else None
+        }
+        for user in recent_users
+    ]
     
-    # Calculate growth rates
-    user_growth = ((new_users_month / total_users) * 100) if total_users > 0 else 0
-    revenue_growth = ((monthly_revenue / last_month_revenue) * 100 - 100) if last_month_revenue > 0 else 0
+    # Get recent tools
+    recent_tools = AITool.query.order_by(AITool.created_at.desc()).limit(5).all()
+    recent_tools_data = [
+        {
+            'id': tool.id,
+            'name': tool.name,
+            'category': tool.category.name if tool.category else None,
+            'access_level': tool.access_level,
+            'created_at': tool.created_at.isoformat() if tool.created_at else None
+        }
+        for tool in recent_tools
+    ]
     
     return format_response({
-        'users': {
-            'total': total_users,
-            'new_today': new_users_today,
-            'new_week': new_users_week,
-            'new_month': new_users_month,
-            'growth_rate': round(user_growth, 2)
+        'counts': {
+            'users': user_count,
+            'tools': tool_count,
+            'reviews': review_count,
+            'revenue': round(revenue, 2)
         },
-        'subscriptions': {
-            'free': free_users,
-            'premium': premium_users,
-            'business': business_users
-        },
-        'tools': {
-            'total': total_tools,
-            'public': public_tools,
-            'premium': premium_tools,
-            'business': business_tools
-        },
-        'reviews': {
-            'total': total_reviews,
-            'verified': verified_reviews
-        },
-        'revenue': {
-            'monthly': round(monthly_revenue, 2),
-            'last_month': round(last_month_revenue, 2),
-            'growth_rate': round(revenue_growth, 2)
-        }
+        'recent_users': recent_users_data,
+        'recent_tools': recent_tools_data
     })
-
-@admin_bp.route('/activity', methods=['GET'])
-@jwt_required()
-@admin_required
-def get_activity():
-    """Get recent user activity."""
-    # Get query parameters
-    days = int(request.args.get('days', 7))
-    limit = int(request.args.get('limit', 20))
-    
-    # Get recent activity
-    activity = UserActivityLog.query.order_by(
-        UserActivityLog.created_at.desc()
-    ).limit(limit).all()
-    
-    # Format response
-    activity_list = []
-    for log in activity:
-        user = User.query.get(log.user_id)
-        if user:
-            activity_list.append({
-                'id': log.id,
-                'user': {
-                    'id': user.id,
-                    'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name
-                },
-                'activity_type': log.activity_type,
-                'details': log.details,
-                'created_at': log.created_at.isoformat()
-            })
-    
-    return format_response(activity_list)
 
 @admin_bp.route('/users/stats', methods=['GET'])
 @jwt_required()
@@ -142,7 +83,7 @@ def get_user_stats():
     end_date = datetime.utcnow()
     start_date = end_date - timedelta(days=days)
     
-    # Get daily user signups
+    # Get daily signups
     daily_signups = []
     current_date = start_date
     

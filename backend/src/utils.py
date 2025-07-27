@@ -1,19 +1,18 @@
 """
 Utility functions for the AI Directory Platform.
 """
-
 import os
 import uuid
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import current_app, request, jsonify
 from functools import wraps
-from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request, jwt_required
 
 def allowed_file(filename):
     """Check if the file extension is allowed."""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 def save_image(file, folder='tool_images'):
     """Save an image file and return the path."""
@@ -53,7 +52,7 @@ def admin_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         verify_jwt_in_request()
-        from .models import User
+        from src.models.user import User
         
         current_user_id = get_jwt_identity()
         current_user = User.query.get(current_user_id)
@@ -77,7 +76,7 @@ def subscription_required(min_tier='Premium'):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             verify_jwt_in_request()
-            from .models import User
+            from src.models.user import User
             
             current_user_id = get_jwt_identity()
             current_user = User.query.get(current_user_id)
