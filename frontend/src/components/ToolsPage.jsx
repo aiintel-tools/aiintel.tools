@@ -1,41 +1,64 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 const ToolsPage = () => {
   const [viewMode, setViewMode] = useState('grid')
+  const [tools, setTools] = useState([])
+  const [loading, setLoading] = useState(true)
   
-  // Mock data
-  const tools = [
-    {
-      id: 1,
-      name: 'ChatGPT',
-      category: 'Conversational AI',
-      description: 'Advanced AI chatbot for conversations and content creation',
-      rating: 4.8
-    },
-    {
-      id: 2,
-      name: 'Midjourney',
-      category: 'Image Generation',
-      description: 'AI-powered image generation from text prompts',
-      rating: 4.7
-    },
-    {
-      id: 3,
-      name: 'GitHub Copilot',
-      category: 'Code Assistant',
-      description: 'AI pair programmer that helps you write code faster',
-      rating: 4.6
-    }
-  ]
+  useEffect(() => {
+    // Fetch tools from API
+    fetch('https://aiinteltools-production.up.railway.app/api/tools')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          setTools(data.data.tools)
+        }
+        setLoading(false)
+      })
+      .catch(error => {
+        console.error('Error fetching tools:', error)
+        // Fallback to static data if API fails
+        setTools([
+          {
+            id: 1,
+            name: 'ChatGPT',
+            category: 'Conversational AI',
+            description: 'Advanced AI chatbot for conversations and content creation',
+            rating: 4.8
+          },
+          {
+            id: 2,
+            name: 'Midjourney',
+            category: 'Image Generation',
+            description: 'AI-powered image generation from text prompts',
+            rating: 4.7
+          },
+          {
+            id: 3,
+            name: 'GitHub Copilot',
+            category: 'Code Assistant',
+            description: 'AI pair programmer that helps you write code faster',
+            rating: 4.6
+          }
+        ])
+        setLoading(false)
+      })
+  }, [])
 
   return (
     <div className="tools-page">
       <div className="container">
         <div className="page-header">
           <h1>AI Tools Directory</h1>
-          <p>Browse our curated collection of AI tools for every need</p>
+          <p>Discover and explore the best AI tools for your business needs</p>
         </div>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <p>Loading tools...</p>
+          </div>
+        ) : (
         
         <div className="tools-controls">
           <div className="search-container">
@@ -134,6 +157,7 @@ const ToolsPage = () => {
             ))}
           </div>
         </div>
+        )}
       </div>
     </div>
   )
