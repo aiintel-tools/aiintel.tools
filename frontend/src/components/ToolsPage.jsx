@@ -59,7 +59,7 @@ const ToolsPage = () => {
             <p>Loading tools...</p>
           </div>
         ) : (
-        
+        <>
         <div className="tools-controls">
           <div className="search-container">
             <input 
@@ -157,6 +157,7 @@ const ToolsPage = () => {
             ))}
           </div>
         </div>
+        </>
         )}
       </div>
     </div>
