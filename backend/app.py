@@ -250,7 +250,7 @@ ADMIN_PORTAL_HTML = """
                             <td>{{ user.email }}</td>
                             <td>{{ user.subscription_tier }}</td>
                             <td>{{ user.created_at[:10] }}</td>
-                            <td><button class="btn">Edit</button></td>
+                            <td><button class="btn" onclick="editUser('{{ user.id }}', '{{ user.first_name }}', '{{ user.last_name }}', '{{ user.email }}', '{{ user.subscription_tier }}')">Edit</button></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -279,7 +279,7 @@ ADMIN_PORTAL_HTML = """
                             <td>{{ tool.category }}</td>
                             <td>{{ tool.access_level }}</td>
                             <td>{{ tool.rating }}/5</td>
-                            <td><button class="btn">Edit</button></td>
+                            <td><button class="btn" onclick="editTool('{{ tool.id }}', '{{ tool.name }}', '{{ tool.description }}', '{{ tool.category }}', '{{ tool.access_level }}', '{{ tool.rating }}', '{{ tool.website_url }}', '{{ tool.business_utility }}', '{{ tool.price_point }}')">Edit</button></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -347,7 +347,91 @@ ADMIN_PORTAL_HTML = """
         </div>
     </div>
 
-    <!-- Add Tool Modal -->
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editUserModal')">&times;</span>
+            <h2>Edit User</h2>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>First Name:</label>
+                    <input type="text" id="editFirstName" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name:</label>
+                    <input type="text" id="editLastName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="editEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Subscription Tier:</label>
+                    <select id="editSubscriptionTier">
+                        <option value="Free">Free</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Business">Business</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Update User</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Tool Modal -->
+    <div id="editToolModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editToolModal')">&times;</span>
+            <h2>Edit AI Tool</h2>
+            <form id="editToolForm">
+                <input type="hidden" id="editToolId">
+                <div class="form-group">
+                    <label>Tool Name:</label>
+                    <input type="text" id="editToolName" required>
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="editToolDescription" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <select id="editToolCategory">
+                        <option value="Conversational AI">Conversational AI</option>
+                        <option value="Image Generation">Image Generation</option>
+                        <option value="Code Assistant">Code Assistant</option>
+                        <option value="Data Analysis">Data Analysis</option>
+                        <option value="Content Creation">Content Creation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Website URL:</label>
+                    <input type="url" id="editToolWebsite">
+                </div>
+                <div class="form-group">
+                    <label>Business Utility:</label>
+                    <textarea id="editBusinessUtility" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Price Point:</label>
+                    <input type="text" id="editPricePoint" placeholder="e.g., Free, $20/month">
+                </div>
+                <div class="form-group">
+                    <label>Access Level:</label>
+                    <select id="editAccessLevel">
+                        <option value="Public">Public</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Business">Business</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Rating:</label>
+                    <input type="number" id="editToolRating" min="0" max="5" step="0.1">
+                </div>
+                <button type="submit" class="btn">Update Tool</button>
+            </form>
+        </div>
+    </div>
     <div id="addToolModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('addToolModal')">&times;</span>
@@ -421,6 +505,28 @@ ADMIN_PORTAL_HTML = """
             document.getElementById('addToolModal').style.display = 'block';
         }
 
+        function editUser(id, firstName, lastName, email, subscriptionTier) {
+            document.getElementById('editUserId').value = id;
+            document.getElementById('editFirstName').value = firstName;
+            document.getElementById('editLastName').value = lastName;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editSubscriptionTier').value = subscriptionTier;
+            document.getElementById('editUserModal').style.display = 'block';
+        }
+
+        function editTool(id, name, description, category, accessLevel, rating, websiteUrl, businessUtility, pricePoint) {
+            document.getElementById('editToolId').value = id;
+            document.getElementById('editToolName').value = name;
+            document.getElementById('editToolDescription').value = description;
+            document.getElementById('editToolCategory').value = category;
+            document.getElementById('editAccessLevel').value = accessLevel;
+            document.getElementById('editToolRating').value = rating;
+            document.getElementById('editToolWebsite').value = websiteUrl || '';
+            document.getElementById('editBusinessUtility').value = businessUtility || '';
+            document.getElementById('editPricePoint').value = pricePoint || '';
+            document.getElementById('editToolModal').style.display = 'block';
+        }
+
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
@@ -487,6 +593,76 @@ ADMIN_PORTAL_HTML = """
                     location.reload();
                 } else {
                     alert('Error adding tool');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        // Edit User Form Submit
+        document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('editUserId').value;
+            const userData = {
+                first_name: document.getElementById('editFirstName').value,
+                last_name: document.getElementById('editLastName').value,
+                email: document.getElementById('editEmail').value,
+                subscription_tier: document.getElementById('editSubscriptionTier').value
+            };
+
+            try {
+                const response = await fetch(`/api/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (response.ok) {
+                    alert('User updated successfully!');
+                    closeModal('editUserModal');
+                    location.reload();
+                } else {
+                    alert('Error updating user');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        // Edit Tool Form Submit
+        document.getElementById('editToolForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const toolId = document.getElementById('editToolId').value;
+            const toolData = {
+                name: document.getElementById('editToolName').value,
+                description: document.getElementById('editToolDescription').value,
+                category: document.getElementById('editToolCategory').value,
+                website_url: document.getElementById('editToolWebsite').value,
+                business_utility: document.getElementById('editBusinessUtility').value,
+                price_point: document.getElementById('editPricePoint').value,
+                access_level: document.getElementById('editAccessLevel').value,
+                rating: parseFloat(document.getElementById('editToolRating').value)
+            };
+
+            try {
+                const response = await fetch(`/api/tools/${toolId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(toolData)
+                });
+
+                if (response.ok) {
+                    alert('Tool updated successfully!');
+                    closeModal('editToolModal');
+                    location.reload();
+                } else {
+                    alert('Error updating tool');
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
@@ -569,6 +745,35 @@ def create_user():
         }
     }), 201
 
+@app.route('/api/users/<user_id>', methods=['PUT'])
+def update_user(user_id):
+    data = request.json
+    
+    for i, user in enumerate(users):
+        if user['id'] == user_id:
+            users[i].update({
+                "email": data.get("email", user["email"]),
+                "first_name": data.get("first_name", user["first_name"]),
+                "last_name": data.get("last_name", user["last_name"]),
+                "subscription_tier": data.get("subscription_tier", user["subscription_tier"]),
+                "is_admin": data.get("is_admin", user["is_admin"])
+            })
+            save_data()
+            return jsonify({
+                "success": True,
+                "message": "User updated successfully",
+                "data": {"user": users[i]}
+            })
+    
+    return jsonify({"success": False, "message": "User not found"}), 404
+
+@app.route('/api/users/<user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    global users
+    users = [user for user in users if user['id'] != user_id]
+    save_data()
+    return jsonify({"success": True, "message": "User deleted successfully"})
+
 # Tool endpoints
 @app.route('/api/tools', methods=['GET'])
 def get_tools():
@@ -606,6 +811,38 @@ def create_tool():
             "tool": new_tool
         }
     }), 201
+
+@app.route('/api/tools/<tool_id>', methods=['PUT'])
+def update_tool(tool_id):
+    data = request.json
+    
+    for i, tool in enumerate(tools):
+        if tool['id'] == tool_id:
+            tools[i].update({
+                "name": data.get("name", tool["name"]),
+                "description": data.get("description", tool["description"]),
+                "category": data.get("category", tool["category"]),
+                "access_level": data.get("access_level", tool["access_level"]),
+                "rating": data.get("rating", tool["rating"]),
+                "website_url": data.get("website_url", tool["website_url"]),
+                "business_utility": data.get("business_utility", tool["business_utility"]),
+                "price_point": data.get("price_point", tool["price_point"])
+            })
+            save_data()
+            return jsonify({
+                "success": True,
+                "message": "Tool updated successfully",
+                "data": {"tool": tools[i]}
+            })
+    
+    return jsonify({"success": False, "message": "Tool not found"}), 404
+
+@app.route('/api/tools/<tool_id>', methods=['DELETE'])
+def delete_tool(tool_id):
+    global tools
+    tools = [tool for tool in tools if tool['id'] != tool_id]
+    save_data()
+    return jsonify({"success": True, "message": "Tool deleted successfully"})
 
 # Admin dashboard data
 @app.route('/api/admin/dashboard', methods=['GET'])
