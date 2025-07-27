@@ -6,7 +6,7 @@ import HomePage from './components/HomePage'
 import ToolsPage from './components/ToolsPage'
 import PricingPage from './components/PricingPage'
 import AuthPage from './components/AuthPage'
-import AdminLogin from './components/AdminLogin'
+import AdminPortal from './components/AdminPortal';
 import Footer from './components/Footer'
 
 function App() {
@@ -24,6 +24,7 @@ function App() {
                   <Route path="/tools" element={<ToolsPage />} />
                   <Route path="/pricing" element={<PricingPage />} />
                   <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/admin" element={<AdminPortal />} />
                 </Routes>
               </main>
               <Footer />

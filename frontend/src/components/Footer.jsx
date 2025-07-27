@@ -51,7 +51,7 @@ const Footer = () => {
         <div className="footer-bottom">
           <p>© 2025 A.I Intel. All rights reserved.</p>
           <div className="footer-bottom-links">
-            <a href="https://aiinteltools-production.up.railway.app/admin" target="_blank" rel="noopener noreferrer" className="admin-link">Admin Portal</a>
+            <Link to="/admin" className="admin-link">Admin Portal</Link>
             <Link to="/legal">Legal</Link>
             <Link to="/sitemap">Sitemap</Link>
           </div>
