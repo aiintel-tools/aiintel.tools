@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template_string
 from flask_cors import CORS
 import os
 import json
@@ -52,6 +52,355 @@ def save_data():
 # Load data on startup
 load_data()
 
+# Admin portal HTML template
+ADMIN_PORTAL_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.I Intel Admin Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header h1 { color: #2c3e50; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-number { font-size: 2em; font-weight: bold; color: #3498db; }
+        .stat-label { color: #7f8c8d; margin-top: 5px; }
+        .section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .section h2 { color: #2c3e50; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #f8f9fa; font-weight: 600; }
+        .btn { background: #3498db; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #2980b9; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 20px; width: 80%; max-width: 600px; border-radius: 8px; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: black; }
+        .tabs { display: flex; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: #ecf0f1; border: none; cursor: pointer; margin-right: 5px; }
+        .tab.active { background: #3498db; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>A.I Intel Admin Portal</h1>
+            <p>Manage your AI directory platform</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="userCount">{{ user_count }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="toolCount">{{ tool_count }}</div>
+                <div class="stat-label">AI Tools</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="reviewCount">{{ review_count }}</div>
+                <div class="stat-label">Reviews</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">$12,850</div>
+                <div class="stat-label">Monthly Revenue</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('users')">Users</button>
+            <button class="tab" onclick="showTab('tools')">AI Tools</button>
+            <button class="tab" onclick="showTab('reviews')">Reviews</button>
+        </div>
+
+        <div id="users" class="tab-content active">
+            <div class="section">
+                <h2>User Management</h2>
+                <button class="btn" onclick="showAddUserModal()">Add New User</button>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Subscription</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.first_name }} {{ user.last_name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.subscription_tier }}</td>
+                            <td>{{ user.created_at[:10] }}</td>
+                            <td><button class="btn">Edit</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tools" class="tab-content">
+            <div class="section">
+                <h2>AI Tools Management</h2>
+                <button class="btn" onclick="showAddToolModal()">Add New Tool</button>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Access Level</th>
+                            <th>Rating</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="toolsTable">
+                        {% for tool in tools %}
+                        <tr>
+                            <td>{{ tool.name }}</td>
+                            <td>{{ tool.category }}</td>
+                            <td>{{ tool.access_level }}</td>
+                            <td>{{ tool.rating }}/5</td>
+                            <td><button class="btn">Edit</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="reviews" class="tab-content">
+            <div class="section">
+                <h2>Reviews Management</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Tool</th>
+                            <th>Rating</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reviewsTable">
+                        {% for review in reviews %}
+                        <tr>
+                            <td>{{ review.user_name }}</td>
+                            <td>{{ review.tool_name }}</td>
+                            <td>{{ review.rating }}/5</td>
+                            <td>{{ review.status }}</td>
+                            <td><button class="btn">Approve</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addUserModal')">&times;</span>
+            <h2>Add New User</h2>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label>First Name:</label>
+                    <input type="text" id="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name:</label>
+                    <input type="text" id="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Subscription Tier:</label>
+                    <select id="subscriptionTier">
+                        <option value="Free">Free</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Business">Business</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Add User</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Tool Modal -->
+    <div id="addToolModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addToolModal')">&times;</span>
+            <h2>Add New AI Tool</h2>
+            <form id="addToolForm">
+                <div class="form-group">
+                    <label>Tool Name:</label>
+                    <input type="text" id="toolName" required>
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="toolDescription" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <select id="toolCategory">
+                        <option value="Conversational AI">Conversational AI</option>
+                        <option value="Image Generation">Image Generation</option>
+                        <option value="Code Assistant">Code Assistant</option>
+                        <option value="Data Analysis">Data Analysis</option>
+                        <option value="Content Creation">Content Creation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Website URL:</label>
+                    <input type="url" id="toolWebsite">
+                </div>
+                <div class="form-group">
+                    <label>Business Utility:</label>
+                    <textarea id="businessUtility" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Price Point:</label>
+                    <input type="text" id="pricePoint" placeholder="e.g., Free, $20/month">
+                </div>
+                <div class="form-group">
+                    <label>Access Level:</label>
+                    <select id="accessLevel">
+                        <option value="Public">Public</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Business">Business</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Add Tool</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function showAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'block';
+        }
+
+        function showAddToolModal() {
+            document.getElementById('addToolModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Add User Form Submit
+        document.getElementById('addUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userData = {
+                first_name: document.getElementById('firstName').value,
+                last_name: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                subscription_tier: document.getElementById('subscriptionTier').value
+            };
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (response.ok) {
+                    alert('User added successfully!');
+                    closeModal('addUserModal');
+                    location.reload();
+                } else {
+                    alert('Error adding user');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        // Add Tool Form Submit
+        document.getElementById('addToolForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const toolData = {
+                name: document.getElementById('toolName').value,
+                description: document.getElementById('toolDescription').value,
+                category: document.getElementById('toolCategory').value,
+                website_url: document.getElementById('toolWebsite').value,
+                business_utility: document.getElementById('businessUtility').value,
+                price_point: document.getElementById('pricePoint').value,
+                access_level: document.getElementById('accessLevel').value,
+                rating: 0
+            };
+
+            try {
+                const response = await fetch('/api/tools', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(toolData)
+                });
+
+                if (response.ok) {
+                    alert('Tool added successfully!');
+                    closeModal('addToolModal');
+                    location.reload();
+                } else {
+                    alert('Error adding tool');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+"""
+
 @app.route('/')
 def root():
     return jsonify({
@@ -60,6 +409,16 @@ def root():
         "status": "running",
         "version": "1.0.0"
     })
+
+@app.route('/admin')
+def admin_portal():
+    return render_template_string(ADMIN_PORTAL_HTML, 
+                                users=users, 
+                                tools=tools, 
+                                reviews=reviews,
+                                user_count=len(users),
+                                tool_count=len(tools),
+                                review_count=len(reviews))
 
 @app.route('/api/health')
 def health_check():
