@@ -52,6 +52,112 @@ def save_data():
 # Load data on startup
 load_data()
 
+# Initialize with frontend data if empty
+if not users:
+    users.extend([
+        {
+            "id": "1",
+            "email": "john.doe@example.com",
+            "first_name": "John",
+            "last_name": "Doe",
+            "subscription_tier": "Premium",
+            "is_admin": False,
+            "created_at": "2025-01-15T10:30:00"
+        },
+        {
+            "id": "2", 
+            "email": "sarah.smith@company.com",
+            "first_name": "Sarah",
+            "last_name": "Smith",
+            "subscription_tier": "Business",
+            "is_admin": False,
+            "created_at": "2025-01-20T14:22:00"
+        },
+        {
+            "id": "3",
+            "email": "mike.johnson@startup.io",
+            "first_name": "Mike", 
+            "last_name": "Johnson",
+            "subscription_tier": "Free",
+            "is_admin": False,
+            "created_at": "2025-01-25T09:15:00"
+        }
+    ])
+
+if not tools:
+    tools.extend([
+        {
+            "id": "1",
+            "name": "ChatGPT",
+            "description": "Advanced language model that can generate human-like text, answer questions, and assist with various tasks.",
+            "category": "Conversational AI",
+            "access_level": "Public",
+            "rating": 4.8,
+            "website_url": "https://chat.openai.com",
+            "business_utility": "Automate customer support, content creation, and research tasks. Helps businesses save time on writing, brainstorming, and problem-solving.",
+            "price_point": "Free tier available, Plus at $20/month",
+            "created_at": "2025-01-01T00:00:00"
+        },
+        {
+            "id": "2", 
+            "name": "Midjourney",
+            "description": "AI art generator that creates stunning images from text descriptions using advanced machine learning.",
+            "category": "Image Generation",
+            "access_level": "Premium",
+            "rating": 4.7,
+            "website_url": "https://midjourney.com",
+            "business_utility": "Create marketing visuals, product mockups, and brand assets without hiring designers. Perfect for social media content and advertising.",
+            "price_point": "Basic plan $10/month, Standard $30/month",
+            "created_at": "2025-01-01T00:00:00"
+        },
+        {
+            "id": "3",
+            "name": "GitHub Copilot", 
+            "description": "AI pair programmer that helps you write code faster with suggestions based on comments and context.",
+            "category": "Code Assistant",
+            "access_level": "Business",
+            "rating": 4.6,
+            "website_url": "https://github.com/features/copilot",
+            "business_utility": "Accelerate software development, reduce coding errors, and help developers learn new programming languages faster.",
+            "price_point": "$10/month per user, Free for students",
+            "created_at": "2025-01-01T00:00:00"
+        }
+    ])
+
+if not reviews:
+    reviews.extend([
+        {
+            "id": "1",
+            "user_name": "John Doe",
+            "tool_name": "ChatGPT", 
+            "rating": 5,
+            "status": "Approved",
+            "comment": "Incredible tool for content creation and customer support automation.",
+            "created_at": "2025-01-20T10:00:00"
+        },
+        {
+            "id": "2",
+            "user_name": "Sarah Smith",
+            "tool_name": "Midjourney",
+            "rating": 5,
+            "status": "Approved", 
+            "comment": "Amazing for creating marketing visuals. Saves us thousands on design costs.",
+            "created_at": "2025-01-22T15:30:00"
+        },
+        {
+            "id": "3",
+            "user_name": "Mike Johnson",
+            "tool_name": "GitHub Copilot",
+            "rating": 4,
+            "status": "Pending",
+            "comment": "Great coding assistant, though sometimes suggestions need refinement.",
+            "created_at": "2025-01-25T11:45:00"
+        }
+    ])
+    
+# Save the initialized data
+save_data()
+
 # Admin portal HTML template
 ADMIN_PORTAL_HTML = """
 <!DOCTYPE html>
